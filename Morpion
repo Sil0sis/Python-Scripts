@@ -1,0 +1,282 @@
+from tkinter import *
+
+import random
+
+squares = None
+player = None
+scores = [0, 0]
+O = 10
+X = 1
+
+solo = True
+
+winning_combos = [
+    [0, 1, 2], [3, 4, 5], [6, 7, 8],
+    [0, 3, 6], [1, 4, 7], [2, 5, 8],
+    [0, 4, 8], [2, 4, 6]]
+
+winners = ['X will win', 'result is draw', 'O will win']
+
+
+def available_moves():
+    #return empty spots
+    return [k for k, v in enumerate(squares) if v is None]
+
+def complete():
+    #return if the game is finish
+    if None not in [v for v in squares]:
+        return True
+    if winner() != None:
+        return True
+    return False
+
+def game_over():
+    info_winner = None
+    if winner() == O:
+        info_winner = 'AI won'  
+    elif winner() == X:
+        info_winner = 'player won'
+    elif winner() == None:
+        info_winner = 'nobody won'
+    trace_win_lign()
+   
+    
+
+def detect_win_lign():
+    for combo in winning_combos:
+        k = 0
+        for pos in combo:
+            print(pos)
+            print ("sp", squares[pos])
+            if not squares[pos] == None:
+                k += squares[pos]
+        if k==3 or k==30:
+            print (combo)
+            return combo
+
+def trace_win_lign():
+    lign = detect_win_lign()
+    if lign == [0, 1, 2]:
+        canvas.create_line(15, 101, 590, 101, width = 12, fill = '#1FA055')
+    elif lign == [3, 4, 5]:
+        canvas.create_line(15, 302, 590, 302, width = 12, fill = '#1FA055')
+    elif lign == [6, 7, 8]:
+        canvas.create_line(15, 503, 590, 503, width = 12, fill = '#1FA055')
+    elif lign == [0, 3, 6]:
+        canvas.create_line(101, 15, 101, 590, width = 12, fill = '#1FA055')
+    elif lign == [1, 4, 7]:
+        canvas.create_line(302, 15, 302, 590, width = 12, fill = '#1FA055')
+    elif lign == [2, 5, 8]:
+        canvas.create_line(503, 15, 503, 590, width = 12, fill = '#1FA055')
+    elif lign == [0, 4, 8]:
+        canvas.create_line(15, 15, 590, 590, width = 12, fill = '#1FA055')
+    elif lign == [2, 4, 6]:
+        canvas.create_line(590, 15, 15, 590, width = 12, fill = '#1FA055')
+
+def ___init___():
+    canvas.delete("all")
+    board_trace()
+    global squares
+    squares = [None for i in range(9)]
+    global player
+    player = random.choice([X, O])
+    if player == O and solo == True:
+        ai(player)
+        player = X
+
+
+def X_win():
+    return winner() == X
+
+def O_win():
+    return winner() == O
+
+def draw():
+    return complete() == True and winner() is None
+
+def winner():
+    #return who is the winner (if there is one)
+    for player in (X, O):
+        positions = get_squares(player)
+        for combo in winning_combos:
+            win = True
+            for pos in combo:
+                if pos not in positions:
+                    win = False
+            if win:
+                return player
+    return None
+
+def get_squares(player):
+    #return squares that belong to a player
+    return [k for k, v in enumerate(squares) if v == player]
+
+def ai(player):
+    print ("- AI START -")
+    a = -2
+    moves = []
+    if len(available_moves()) == 9:
+        make_move(random.choice([0, 2, 6, 8, 4]), player) #if ai start, choose center or random corner 
+        return
+    for move in available_moves():
+        ghost_move(move, player)
+        val = alphabeta(get_enemy(player), -2, 2)
+        ghost_move(move, None)
+        print ("If move in ", move + 1, ", ", winners[val + 1])
+        if val > a:
+            a = val
+            moves = [move]
+        elif val == a:
+            moves.append(move)
+    print ("usefull moves : ", moves)
+    print ("- AI STOP -")
+    make_move(random.choice(moves), player)
+    return
+
+def alphabeta(player, alpha, beta):
+    #simple minmax algo with alpha-beta pruning
+    if complete():
+        if X_win():
+            return -1
+        elif draw():
+            return 0
+        elif O_win():
+            return 1
+    for move in available_moves():
+        ghost_move(move, player)
+        val = alphabeta(get_enemy(player), alpha, beta)
+        ghost_move(move, None)
+        if player == O:
+            if val > alpha:
+                alpha = val
+            if alpha >= beta:
+                return beta
+        else:
+            if val < beta:
+                beta = val
+            if beta <= alpha:
+                return alpha
+    if player == O:
+        return alpha
+    else:
+        return beta
+
+def ghost_move(position, player):
+    #
+    squares[position] = player
+
+def get_enemy(player):
+    #return opposit player
+    if player == X:
+        return O
+    return X
+
+def board_trace():
+    #drawn the board ligns
+    canvas.create_line(202, 2, 202, 603, width = 2, fill = '#F0F0F0')
+    canvas.create_line(403, 2, 403, 603, width = 2, fill = '#F0F0F0')
+    canvas.create_line(2, 202, 603, 202, width = 2, fill = '#F0F0F0')
+    canvas.create_line(2, 403, 603, 403, width = 2, fill = '#F0F0F0')
+
+def make_move(position, player):
+    """place on the board"""
+    if position == 0:
+        symbol_trace(101, 101, player)
+    elif position == 1:
+        symbol_trace(302, 101, player)
+    elif position == 2:
+        symbol_trace(503, 101, player)
+    elif position == 3:
+        symbol_trace(101, 302, player)
+    elif position == 4:
+        symbol_trace(302, 302, player)
+    elif position == 5:
+        symbol_trace(503, 302, player)
+    elif position == 6:
+        symbol_trace(101, 503, player)
+    elif position == 7:
+        symbol_trace(302, 503, player)
+    elif position == 8:
+        symbol_trace(503, 503, player)
+
+    squares[position] = player
+
+def symbol_trace(x, y, player):
+
+    if player == X:
+        #symbol_trace une croix dans le Canvas principal
+        canvas.create_line(x-65, y-65, x+65, y+65, width = 30, fill = '#1E7FCB')
+        canvas.create_line(x-65, y+65, x+65, y-65, width = 30, fill = '#1E7FCB')
+    elif player == O:
+        #symbol_trace un rond dans la Canvas principal
+        canvas.create_oval(x - 75, y - 75, x + 75, y + 75, outline='#FF0921', fill = '#FF0921')
+        canvas.create_oval(x - 50, y - 50, x+50, y+50, outline='#FF0921', fill = '#272822')
+
+def click_pos_parsing(event):
+    if complete():
+        ___init___()
+        return
+    clickX = event.x
+    clickY = event.y
+    player_choice = None
+
+    if clickY > 0 and clickY <= 205:
+        if clickX > 0 and clickX <= 205:
+            player_choice = 0
+        elif clickX > 205 and clickX <= 405:
+            player_choice = 1
+        elif clickX > 405 and clickX <= 605:
+            player_choice = 2
+    elif clickY > 205 and clickY <= 405:
+        if clickX > 0 and clickX <= 205:
+            player_choice = 3
+        elif clickX > 205 and clickX <= 405:
+            player_choice = 4
+        elif clickX > 405 and clickX <= 605:
+            player_choice = 5
+    elif clickY > 405 and clickY <= 605:
+        if clickX > 0 and clickX <= 205:
+            player_choice = 6
+        elif clickX > 205 and clickX <= 405:
+            player_choice = 7
+        elif clickX > 405 and clickX <= 605:
+            player_choice = 8
+    else :
+        player_choice = None
+    global player
+
+    if not player_choice == None and player_choice in available_moves():
+        make_move(player_choice, player)
+        player = get_enemy(player)
+
+def b_release(event):
+    global player
+    if solo == True and player == O and not complete():
+        ai(player)
+        player = get_enemy(player)
+    if complete():
+        game_over()
+        return
+
+# Création de la fenêtre principale
+window = Tk()
+window.title('Morpion')
+window.attributes("-fullscreen", True)
+window.configure(bg="#272822")
+# Création d'un widget canvas
+largeur = 601
+hauteur = 601
+canvas = Canvas(window, width = largeur, height = hauteur, bg ='#272822')
+canvas.pack(padx =10, pady =10)
+
+___init___()
+
+canvas.bind('<Button-1>', click_pos_parsing)
+canvas.bind('<ButtonRelease-1>', b_release)
+window.bind('<Escape>', lambda e: e.widget.quit())
+
+
+
+window.mainloop()
+
+#bleu gris : #222728 
